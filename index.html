@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>title</title>
+    <style>
+        body{
+            margin: 0;
+            padding: 0;
+        }
+        *{box-sizing: border-box}
+        .point{
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: aqua;
+            cursor: move;
+        }
+        .content{
+            width: 100%;
+            height: 100%;
+        }
+        .rotateP{
+            position: absolute;
+            top:-25px;
+            left: -25px;
+            background-color: transparent;
+        }
+        .box{
+            width: 300px;
+            height: 200px;
+            position: absolute;
+            left: 25%;
+            top: 20%;
+            opacity: 0.4;
+            z-index: 2;
+            transform: rotate(62deg);
+        }
+    </style>
+</head>
+<body>
+<div class="box box1">
+    <div style="left:-5px;top:-5px;" class="point">0</div>
+    <div style="left:50%;top:-5px;" class="point">1</div>
+    <div style="right:-5px;top:-5px;" class="point">2</div>
+    <div style="left:100%;top:50%;" class="point">3</div>
+    <div style="right:-5px;bottom:-5px;" class="point">4</div>
+    <div style="left:50%;top:100%;" class="point">5</div>
+    <div style="left:-5px;bottom:-5px;" class="point">6</div>
+    <div style="left:-5px;top:50%;" class="point">7</div>
+    <div class="point rotateP">@</div>
+    <div class="content">
+        <img src="imgs/forRotate.jpg" style="width: 100%;height: 100%;object-fit: cover">
+    </div>
+</div>
+<script src="js/jquery-1.11.3.js"></script>
+<script>
+    let offEvent = ()=>{
+        let doc = document;
+        doc.onmouseup = () =>{
+            doc.onmousemove = null;
+            doc.onmouseup = null
+        }
+    };
+    $(function () {
+        $('.box .point').on('mousedown',function(e){
+            e.stopPropagation();
+            e.preventDefault(e);
+
+            let _this = $(this),
+                index = _this.index(),
+                box = _this.parent();
+            let matrix = box.css('transform').split('(')[1].split(')')[0].split(','),
+                deg = Math.round(Math.atan2(matrix[1],matrix[0]) * (180 / Math.PI)),
+                cos = Math.abs(Math.cos(deg*Math.PI/180)).toFixed(2),
+                sin = Math.abs(Math.sin(deg*Math.PI/180)).toFixed(2);
+            let origW = parseInt(box.outerWidth()),
+                origH = parseInt(box.outerHeight()),
+                origL = box.offset().left,
+                origT = box.offset().top,
+                scale = origW/origH;
+            let ex = e.clientX,
+                ey = e.clientY;
+            let ox = origL + origW/2,
+                oy = origT + origH/2;
+            let nowDeg = Math.asin(Math.abs(ey-oy)/Math.sqrt((ex-ox)*(ex-ox)+(ey-oy)*(ey-oy)))/Math.PI*180;
+            $(document).on('mousemove',function(e){
+                let mx = e.clientX,
+                    my = e.clientY;
+                let w,h,l,t;
+                switch (index){
+                    case 8:
+                        let newDeg ;
+                        if(ex<ox&&ey<oy){//2左上
+                            newDeg = deg + Math.atan2(- my + oy,- mx + ox)*(180/Math.PI) - nowDeg
+                        }
+                        if(ex>ox&&ey<oy){//1右上
+                            newDeg = deg + Math.atan2(+ mx - ox,- my + oy)*(180/Math.PI) + nowDeg - 90
+                        }
+                        if(ex<ox&&ey>oy){//3左下
+                            newDeg = deg + Math.atan2(- mx + ox,+ my - oy)*(180/Math.PI) + nowDeg - 90
+                        }
+                        if(ex>ox&&ey>oy){//4右下
+                            newDeg = deg + Math.atan2(+ my - oy,+ mx - ox)*(180/Math.PI) - nowDeg
+                        }
+                        box.css({'transform': 'rotate('+ newDeg%360 +'deg)'});
+                        break;
+                    case 0:
+                        if(deg>0&&deg<=90){
+                            h = origH - my + ey;
+                            w = h * origW/origH;
+                            l = origL - cos*(w - origW);
+                            t = origT - sin*(w - origW) - cos*(ey - my);
+                        }
+                        if(deg>90&&deg<=180){
+                            w = origW + mx - ex;
+                            h = w / scale;
+                            l = origL;
+                            t = origT - sin*(mx - ex);
+                        }
+                        if(deg>-180&&deg<=-90){
+                            h = origH + my - ey;
+                            w = h * scale;
+                            l = origL - sin*(my - ey);
+                            t = origT;
+                        }
+                        if(deg>-90&&deg<=0){
+                            w = origW - mx + ex ;
+                            h = w / scale;
+                            l = origL - cos*(ex - mx) - sin*(h - origH);
+                            t = origT - cos*(h - origH);
+                        }
+                        break;
+                    case 1:
+                        w = origW;
+                        if(deg>0&&deg<=45){
+                            h = origH - my + ey;
+                            l = origL ;
+                            t = origT - cos*(ey - my);
+                        }
+                        if(deg>45&&deg<=90){
+                            h = origH + mx - ex;
+                            l = origL ;
+                            t = origT - cos*(mx - ex);
+                        }
+                        if(deg>90&&deg<=135){
+                            h = origH + mx - ex;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>135&&deg<=180){
+                            h = origH + my - ey;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>-180&&deg<=-135){
+                            h = origH + my - ey;
+                            l = origL - sin*(my - ey);
+                            t = origT;
+                        }
+                        if(deg>-135&&deg<=-90){
+                            h = origH - mx + ex;
+                            l = origL - sin*(ex - mx);
+                            t = origT;
+                        }
+                        if(deg>-90&&deg<=-45){
+                            h = origH - mx + ex ;
+                            l = origL - sin*(ex - mx);
+                            t = origT - cos*(ex - mx);
+                        }
+                        if(deg>-45&&deg<=0){
+                            h = origH - my + ey ;
+                            l = origL - sin*(ey - my);
+                            t = origT - cos*(ey - my);
+                        }
+                        break;
+                    case 2:
+                        if(deg>0&&deg<=90){
+                            w = origW + mx - ex;
+                            h = w / scale;
+                            l = origL;
+                            t = origT - cos*(h - origH);
+                        }
+                        if(deg>90&&deg<=180){
+                            h = origH + my - ey;
+                            w = h * scale;
+                            l = origL - cos*(w - origW);
+                            t = origT;
+                        }
+                        if(deg>-180&&deg<=-90){
+                            w = origW - mx + ex ;
+                            h = w / scale;
+                            l = origL - cos*(w - origW) - sin*(h - origH);
+                            t = origT - sin*(ex - mx);
+                        }
+                        if(deg>-90&&deg<=0){
+                            h = origH - my + ey;
+                            w = h * scale;
+                            l = origL - sin*(ey - my);
+                            t = origT - sin*(w - origW) - cos*(ey - my);
+                        }
+                        break;
+                    case 3:
+                        h = origH;
+                        if(deg>0&&deg<=45){
+                            w = origW + mx - ex;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>45&&deg<=90){
+                            w = origW + my - ey;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>90&&deg<=135){
+                            w = origW + my - ey;
+                            l = origL - cos*(my - ey);
+                            t = origT;
+                        }
+                        if(deg>135&&deg<=180){
+                            w = origW + ex - mx;
+                            l = origL - cos*(ex - mx);
+                            t = origT;
+                        }
+                        if(deg>-180&&deg<=-135){
+                            w = origW + ex - mx ;
+                            l = origL - cos*(ex - mx);
+                            t = origT - sin*(ex - mx);
+                        }
+                        if(deg>-135&&deg<=-90){
+                            w = origW - my + ey ;
+                            l = origL - cos*(ey - my);
+                            t = origT - sin*(ey - my);
+                        }
+                        if(deg>-90&&deg<=-45){
+                            w = origW - my + ey ;
+                            l = origL ;
+                            t = origT - sin*(ey - my);
+                        }
+                        if(deg>-45&&deg<=0){
+                            w = origW + mx - ex ;
+                            l = origL ;
+                            t = origT - sin*(mx - ex);
+                        }
+                        break;
+                    case 4:
+                        if(deg>0&&deg<=90){
+                            h = origH + my - ey;
+                            w = h * scale;
+                            l = origL - sin*(my - ey);
+                            t = origT;
+                        }
+                        if(deg>90&&deg<=180){
+                            w = origW - mx + ex ;
+                            h = w / scale;
+                            l = origL - cos*(ex - mx) - sin*(h - origH);
+                            t = origT - cos*(h - origH);
+                        }
+                        if(deg>-180&&deg<=-90){
+                            h = origH - my + ey;
+                            w = h * scale;
+                            l = origL - cos*(w - origW);
+                            t = origT - sin*(w - origW) - cos*(ey - my);
+                        }
+                        if(deg>-90&&deg<=0){
+                            w = origW + mx - ex;
+                            h = w / scale;
+                            l = origL;
+                            t = origT - sin*(mx - ex);
+                        }
+                        break;
+                    case 5:
+                        w = origW;
+                        if(deg>0&&deg<=45){
+                            h = origH + my - ey;
+                            l = origL - sin*(my - ey);
+                            t = origT;
+                        }
+                        if(deg>45&&deg<=90){
+                            h = origH - mx + ex;
+                            l = origL - sin*(ex - mx);
+                            t = origT;
+                        }
+                        if(deg>90&&deg<=135){
+                            h = origH - mx + ex;
+                            l = origL - sin*(ex - mx);
+                            t = origT - cos*(ex - mx);
+                        }
+                        if(deg>135&&deg<=180){
+                            h = origH - my + ey;
+                            l = origL - sin*(ey - my);
+                            t = origT - cos*(ey - my);
+                        }
+                        if(deg>-180&&deg<=-135){
+                            h = origH - my + ey;
+                            l = origL;
+                            t = origT-cos*(ey - my);
+                        }
+                        if(deg>-135&&deg<=-90){
+                            h = origH + mx - ex;
+                            l = origL;
+                            t = origT-cos*(mx - ex);
+                        }
+                        if(deg>-90&&deg<=-45){
+                            h = origH + mx - ex;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>-45&&deg<=0){
+                            h = origH + my - ey;
+                            l = origL;
+                            t = origT;
+                        }
+                        break;
+                    case 6:
+                        if(deg>0&&deg<=90){
+                            w = origW - mx + ex ;
+                            h = w / scale;
+                            l = origL - cos*(w - origW) - sin*(h - origH);
+                            t = origT - sin*(ex - mx);
+                        }
+                        if(deg>90&&deg<=180){
+                            h = origH - my + ey;
+                            w = h * scale;
+                            l = origL - sin*(ey - my);
+                            t = origT - sin*(w - origW) - cos*(ey - my);
+                        }
+                        if(deg>-180&&deg<=-90){
+                            w = origW + mx - ex;
+                            h = w / scale;
+                            l = origL;
+                            t = origT - cos*(h - origH);
+                        }
+                        if(deg>-90&&deg<=0){
+                            h = origH + my - ey;
+                            w = h * scale;
+                            l = origL - cos*(w - origW);
+                            t = origT;
+                        }
+                        break;
+                    case 7:
+                        h = origH;
+                        if(deg>0&&deg<=45){
+                            w = origW - mx + ex ;
+                            l = origL - cos*(ex - mx);
+                            t = origT - sin*(ex - mx);
+                        }
+                        if(deg>45&&deg<=90){
+                            w = origW - my + ey ;
+                            l = origL - cos*(ey - my);
+                            t = origT - sin*(ey - my);
+                        }
+                        if(deg>90&&deg<=135){
+                            w = origW - my + ey ;
+                            l = origL;
+                            t = origT - sin*(ey - my);
+                        }
+                        if(deg>135&&deg<=180){
+                            w = origW + mx - ex ;
+                            l = origL;
+                            t = origT - sin*(mx - ex);
+                        }
+                        if(deg>-180&&deg<=-135){
+                            w = origW + mx - ex;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>-135&&deg<=-90){
+                            w = origW + my - ey;
+                            l = origL;
+                            t = origT;
+                        }
+                        if(deg>-90&&deg<=-45){
+                            w = origW + my - ey;
+                            l = origL - cos*(my - ey);
+                            t = origT;
+                        }
+                        if(deg>-45&&deg<=0){
+                            w = origW - mx + ex;
+                            l = origL - cos*(ex - mx);
+                            t = origT;
+                        }
+                        break;
+                }
+                box.css({'width': w,'height': h}).offset({'left':l,'top':t});
+                return 0
+            });
+            offEvent();
+        });
+
+        $('.box .content')[0].onmousedown =  e =>{
+            e.preventDefault();
+            let _this = $(this),
+                box = _this.parent();
+            let origL = box.offset().left,
+                origT = box.offset().top;
+            let doc = document;
+            let ex = e.clientX,
+                ey = e.clientY;
+            doc.onmousemove = e => {
+                let mx = e.clientX,
+                    my = e.clientY;
+                box.offset({left:origL + mx - ex,top:origT + my - ey})
+            };
+            offEvent();
+        }
+    });
+    //    function setOffset( elem, options, i ) {
+    //        var curPosition, curLeft, curCSSTop, curTop, curOffset, curCSSLeft, calculatePosition,
+    //            position = jQuery.css( elem, "position" ),
+    //            curElem = jQuery( elem ),
+    //            props = {};
+    //        if ( position === "static" ) {
+    //            elem.style.position = "relative";
+    //        }
+    //        curOffset = curElem.offset();
+    //
+    //        curCSSTop = jQuery.css( elem, "top" );
+    //        curCSSLeft = jQuery.css( elem, "left" );
+    //
+    //        calculatePosition = ( position === "absolute" || position === "fixed" ) &&
+    //            jQuery.inArray("auto", [ curCSSTop, curCSSLeft ] ) > -1;
+    //        if ( calculatePosition ) {
+    //            curPosition = curElem.position();
+    //            curTop = curPosition.top;
+    //            curLeft = curPosition.left;
+    //        } else {
+    //            curTop = parseFloat( curCSSTop ) || 0;
+    //            curLeft = parseFloat( curCSSLeft ) || 0;
+    //        }
+    //        if ( jQuery.isFunction( options ) ) {
+    //            options = options.call( elem, i, curOffset );
+    //        }
+    //        if ( options.top != null ) {
+    //            props.top = ( options.top - curOffset.top ) + curTop;
+    //        }
+    //        if ( options.left != null ) {
+    //            props.left = ( options.left - curOffset.left ) + curLeft;
+    //        }
+    //        if ( "using" in options ) {
+    //            options.using.call( elem, props );
+    //        } else {
+    //            curElem.css( props );
+    //        }
+    //    }
+</script>
+</body>
+</html>
